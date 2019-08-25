@@ -1,0 +1,753 @@
+<html>
+<meta charset="utf-8"/>
+<head>
+<style>
+div.overlay {
+    pointer-events: none;
+}
+</style>
+</head>
+<script>
+
+// counter used to generate IDs
+var id = 0;
+
+// A Shangai board can have the following dimensions. The X and Y dimensions are given in half tiles.
+// The Z dimension is the layer number.
+const MAX_X = 32;
+const MAX_Y = 18;
+const MAX_Z = 6;
+
+const VICTORY = 0;
+const GAME_OVER = 1; 	// value indicating that the game is blocked with only one selectable tile, i.e. with no hope of
+                        // unlocking the situation by shuffling the remaining tiles
+
+const GAME_BLOCKED = 2; // value indicating that no move is possible and that the remaining tiles should be shuffled
+const PLAYING = 3;
+
+// The global 3D tiles array that represent the game
+var tiles;
+
+// The current selected tile, if any
+var selectedTile = null;
+
+// A pair of matching selectable tiles that can presented as a hint to the player
+var hintTile1 = null;
+var hintTile2 = null;
+
+// These constants represents the logical types of tiles.
+const ONE_BAMBOO = 1;
+const TWO_BAMBOO = 2;
+const THREE_BAMBOO = 3;
+const FOUR_BAMBOO = 4;
+const FIVE_BAMBOO = 5;
+const SIX_BAMBOO = 6;
+const SEVEN_BAMBOO = 7;
+const EIGHT_BAMBOO = 8;
+const NINE_BAMBOO = 9;
+
+const ONE_CHARACTER = 11;
+const TWO_CHARACTER = 12;
+const THREE_CHARACTER = 13;
+const FOUR_CHARACTER = 14;
+const FIVE_CHARACTER = 15;
+const SIX_CHARACTER = 16;
+const SEVEN_CHARACTER = 17;
+const EIGHT_CHARACTER = 18;
+const NINE_CHARACTER = 19;
+
+const ONE_CIRCLE = 21;
+const TWO_CIRCLE = 22;
+const THREE_CIRCLE = 23;
+const FOUR_CIRCLE = 24;
+const FIVE_CIRCLE = 25;
+const SIX_CIRCLE = 26;
+const SEVEN_CIRCLE = 27;
+const EIGHT_CIRCLE = 28;
+const NINE_CIRCLE = 29;
+
+const RED_DRAGON = 31;
+const GREEN_DRAGON = 32;
+const WHITE_DRAGON = 33;
+
+const FLOWER = 41;
+
+const SEASON = 51;
+
+const NORTH = 61;
+const SOUTH = 62;
+const EAST = 63;
+const WEST = 64;
+
+const TILE_WIDTH = 54;
+const TILE_HEIGHT = 74;
+
+const TILE_BORDER_WIDTH = 10;
+const TILE_BORDER_HEIGHT = 10;
+
+
+
+/**
+ * Returns a shuffled set of tiles.
+ */
+function createTileSet() {
+    var tiles = [];
+    tiles.push(makeTile(ONE_BAMBOO, "img/1_bamboo.png"));
+    tiles.push(makeTile(TWO_BAMBOO, "img/2_bamboo.png"));
+    tiles.push(makeTile(THREE_BAMBOO, "img/3_bamboo.png"));
+    tiles.push(makeTile(FOUR_BAMBOO, "img/4_bamboo.png"));
+    tiles.push(makeTile(FIVE_BAMBOO, "img/5_bamboo.png"));
+    tiles.push(makeTile(SIX_BAMBOO, "img/6_bamboo.png"));
+    tiles.push(makeTile(SEVEN_BAMBOO, "img/7_bamboo.png"));
+    tiles.push(makeTile(EIGHT_BAMBOO, "img/8_bamboo.png"));
+    tiles.push(makeTile(NINE_BAMBOO, "img/9_bamboo.png"));
+    tiles.push(makeTile(ONE_CIRCLE, "img/1_circle.png"));
+    tiles.push(makeTile(TWO_CIRCLE, "img/2_circle.png"));
+    tiles.push(makeTile(THREE_CIRCLE, "img/3_circle.png"));
+    tiles.push(makeTile(FOUR_CIRCLE, "img/4_circle.png"));
+    tiles.push(makeTile(FIVE_CIRCLE, "img/5_circle.png"));
+    tiles.push(makeTile(SIX_CIRCLE, "img/6_circle.png"));
+    tiles.push(makeTile(SEVEN_CIRCLE, "img/7_circle.png"));
+    tiles.push(makeTile(EIGHT_CIRCLE, "img/8_circle.png"));
+    tiles.push(makeTile(NINE_CIRCLE, "img/9_circle.png"));
+    tiles.push(makeTile(ONE_CHARACTER, "img/1_character.png"));
+    tiles.push(makeTile(TWO_CHARACTER, "img/2_character.png"));
+    tiles.push(makeTile(THREE_CHARACTER, "img/3_character.png"));
+    tiles.push(makeTile(FOUR_CHARACTER, "img/4_character.png"));
+    tiles.push(makeTile(FIVE_CHARACTER, "img/5_character.png"));
+    tiles.push(makeTile(SIX_CHARACTER, "img/6_character.png"));
+    tiles.push(makeTile(SEVEN_CHARACTER, "img/7_character.png"));
+    tiles.push(makeTile(EIGHT_CHARACTER, "img/8_character.png"));
+    tiles.push(makeTile(NINE_CHARACTER, "img/9_character.png"));
+    tiles.push(makeTile(NORTH, "img/north.png"));
+    tiles.push(makeTile(SOUTH, "img/south.png"));
+    tiles.push(makeTile(EAST, "img/east.png"));
+    tiles.push(makeTile(WEST, "img/west.png"));
+    tiles.push(makeTile(RED_DRAGON, "img/red_dragon.png"));
+    tiles.push(makeTile(GREEN_DRAGON, "img/green_dragon.png"));
+    tiles.push(makeTile(WHITE_DRAGON, "img/white_dragon.png"));
+    tiles.push(makeTile(ONE_BAMBOO, "img/1_bamboo.png"));
+    tiles.push(makeTile(TWO_BAMBOO, "img/2_bamboo.png"));
+    tiles.push(makeTile(THREE_BAMBOO, "img/3_bamboo.png"));
+    tiles.push(makeTile(FOUR_BAMBOO, "img/4_bamboo.png"));
+    tiles.push(makeTile(FIVE_BAMBOO, "img/5_bamboo.png"));
+    tiles.push(makeTile(SIX_BAMBOO, "img/6_bamboo.png"));
+    tiles.push(makeTile(SEVEN_BAMBOO, "img/7_bamboo.png"));
+    tiles.push(makeTile(EIGHT_BAMBOO, "img/8_bamboo.png"));
+    tiles.push(makeTile(NINE_BAMBOO, "img/9_bamboo.png"));
+    tiles.push(makeTile(ONE_CIRCLE, "img/1_circle.png"));
+    tiles.push(makeTile(TWO_CIRCLE, "img/2_circle.png"));
+    tiles.push(makeTile(THREE_CIRCLE, "img/3_circle.png"));
+    tiles.push(makeTile(FOUR_CIRCLE, "img/4_circle.png"));
+    tiles.push(makeTile(FIVE_CIRCLE, "img/5_circle.png"));
+    tiles.push(makeTile(SIX_CIRCLE, "img/6_circle.png"));
+    tiles.push(makeTile(SEVEN_CIRCLE, "img/7_circle.png"));
+    tiles.push(makeTile(EIGHT_CIRCLE, "img/8_circle.png"));
+    tiles.push(makeTile(NINE_CIRCLE, "img/9_circle.png"));
+    tiles.push(makeTile(ONE_CHARACTER, "img/1_character.png"));
+    tiles.push(makeTile(TWO_CHARACTER, "img/2_character.png"));
+    tiles.push(makeTile(THREE_CHARACTER, "img/3_character.png"));
+    tiles.push(makeTile(FOUR_CHARACTER, "img/4_character.png"));
+    tiles.push(makeTile(FIVE_CHARACTER, "img/5_character.png"));
+    tiles.push(makeTile(SIX_CHARACTER, "img/6_character.png"));
+    tiles.push(makeTile(SEVEN_CHARACTER, "img/7_character.png"));
+    tiles.push(makeTile(EIGHT_CHARACTER, "img/8_character.png"));
+    tiles.push(makeTile(NINE_CHARACTER, "img/9_character.png"));
+    tiles.push(makeTile(NORTH, "img/north.png"));
+    tiles.push(makeTile(SOUTH, "img/south.png"));
+    tiles.push(makeTile(EAST, "img/east.png"));
+    tiles.push(makeTile(WEST, "img/west.png"));
+    tiles.push(makeTile(RED_DRAGON, "img/red_dragon.png"));
+    tiles.push(makeTile(GREEN_DRAGON, "img/green_dragon.png"));
+    tiles.push(makeTile(WHITE_DRAGON, "img/white_dragon.png"));
+    tiles.push(makeTile(ONE_BAMBOO, "img/1_bamboo.png"));
+    tiles.push(makeTile(TWO_BAMBOO, "img/2_bamboo.png"));
+    tiles.push(makeTile(THREE_BAMBOO, "img/3_bamboo.png"));
+    tiles.push(makeTile(FOUR_BAMBOO, "img/4_bamboo.png"));
+    tiles.push(makeTile(FIVE_BAMBOO, "img/5_bamboo.png"));
+    tiles.push(makeTile(SIX_BAMBOO, "img/6_bamboo.png"));
+    tiles.push(makeTile(SEVEN_BAMBOO, "img/7_bamboo.png"));
+    tiles.push(makeTile(EIGHT_BAMBOO, "img/8_bamboo.png"));
+    tiles.push(makeTile(NINE_BAMBOO, "img/9_bamboo.png"));
+    tiles.push(makeTile(ONE_CIRCLE, "img/1_circle.png"));
+    tiles.push(makeTile(TWO_CIRCLE, "img/2_circle.png"));
+    tiles.push(makeTile(THREE_CIRCLE, "img/3_circle.png"));
+    tiles.push(makeTile(FOUR_CIRCLE, "img/4_circle.png"));
+    tiles.push(makeTile(FIVE_CIRCLE, "img/5_circle.png"));
+    tiles.push(makeTile(SIX_CIRCLE, "img/6_circle.png"));
+    tiles.push(makeTile(SEVEN_CIRCLE, "img/7_circle.png"));
+    tiles.push(makeTile(EIGHT_CIRCLE, "img/8_circle.png"));
+    tiles.push(makeTile(NINE_CIRCLE, "img/9_circle.png"));
+    tiles.push(makeTile(ONE_CHARACTER, "img/1_character.png"));
+    tiles.push(makeTile(TWO_CHARACTER, "img/2_character.png"));
+    tiles.push(makeTile(THREE_CHARACTER, "img/3_character.png"));
+    tiles.push(makeTile(FOUR_CHARACTER, "img/4_character.png"));
+    tiles.push(makeTile(FIVE_CHARACTER, "img/5_character.png"));
+    tiles.push(makeTile(SIX_CHARACTER, "img/6_character.png"));
+    tiles.push(makeTile(SEVEN_CHARACTER, "img/7_character.png"));
+    tiles.push(makeTile(EIGHT_CHARACTER, "img/8_character.png"));
+    tiles.push(makeTile(NINE_CHARACTER, "img/9_character.png"));
+    tiles.push(makeTile(NORTH, "img/north.png"));
+    tiles.push(makeTile(SOUTH, "img/south.png"));
+    tiles.push(makeTile(EAST, "img/east.png"));
+    tiles.push(makeTile(WEST, "img/west.png"));
+    tiles.push(makeTile(RED_DRAGON, "img/red_dragon.png"));
+    tiles.push(makeTile(GREEN_DRAGON, "img/green_dragon.png"));
+    tiles.push(makeTile(WHITE_DRAGON, "img/white_dragon.png"));
+    tiles.push(makeTile(ONE_BAMBOO, "img/1_bamboo.png"));
+    tiles.push(makeTile(TWO_BAMBOO, "img/2_bamboo.png"));
+    tiles.push(makeTile(THREE_BAMBOO, "img/3_bamboo.png"));
+    tiles.push(makeTile(FOUR_BAMBOO, "img/4_bamboo.png"));
+    tiles.push(makeTile(FIVE_BAMBOO, "img/5_bamboo.png"));
+    tiles.push(makeTile(SIX_BAMBOO, "img/6_bamboo.png"));
+    tiles.push(makeTile(SEVEN_BAMBOO, "img/7_bamboo.png"));
+    tiles.push(makeTile(EIGHT_BAMBOO, "img/8_bamboo.png"));
+    tiles.push(makeTile(NINE_BAMBOO, "img/9_bamboo.png"));
+    tiles.push(makeTile(ONE_CIRCLE, "img/1_circle.png"));
+    tiles.push(makeTile(TWO_CIRCLE, "img/2_circle.png"));
+    tiles.push(makeTile(THREE_CIRCLE, "img/3_circle.png"));
+    tiles.push(makeTile(FOUR_CIRCLE, "img/4_circle.png"));
+    tiles.push(makeTile(FIVE_CIRCLE, "img/5_circle.png"));
+    tiles.push(makeTile(SIX_CIRCLE, "img/6_circle.png"));
+    tiles.push(makeTile(SEVEN_CIRCLE, "img/7_circle.png"));
+    tiles.push(makeTile(EIGHT_CIRCLE, "img/8_circle.png"));
+    tiles.push(makeTile(NINE_CIRCLE, "img/9_circle.png"));
+    tiles.push(makeTile(ONE_CHARACTER, "img/1_character.png"));
+    tiles.push(makeTile(TWO_CHARACTER, "img/2_character.png"));
+    tiles.push(makeTile(THREE_CHARACTER, "img/3_character.png"));
+    tiles.push(makeTile(FOUR_CHARACTER, "img/4_character.png"));
+    tiles.push(makeTile(FIVE_CHARACTER, "img/5_character.png"));
+    tiles.push(makeTile(SIX_CHARACTER, "img/6_character.png"));
+    tiles.push(makeTile(SEVEN_CHARACTER, "img/7_character.png"));
+    tiles.push(makeTile(EIGHT_CHARACTER, "img/8_character.png"));
+    tiles.push(makeTile(NINE_CHARACTER, "img/9_character.png"));
+    tiles.push(makeTile(NORTH, "img/north.png"));
+    tiles.push(makeTile(SOUTH, "img/south.png"));
+    tiles.push(makeTile(EAST, "img/east.png"));
+    tiles.push(makeTile(WEST, "img/west.png"));
+    tiles.push(makeTile(RED_DRAGON, "img/red_dragon.png"));
+    tiles.push(makeTile(GREEN_DRAGON, "img/green_dragon.png"));
+    tiles.push(makeTile(WHITE_DRAGON, "img/white_dragon.png"));
+    tiles.push(makeTile(FLOWER, "img/plum_blossom.png"));
+    tiles.push(makeTile(FLOWER, "img/orchid.png"));
+    tiles.push(makeTile(FLOWER, "img/chrysanthemum.png"));
+    tiles.push(makeTile(FLOWER, "img/bamboo.png"));
+    tiles.push(makeTile(SEASON, "img/spring.png"));
+    tiles.push(makeTile(SEASON, "img/summer.png"));
+    tiles.push(makeTile(SEASON, "img/autumn.png"));
+    tiles.push(makeTile(SEASON, "img/winter.png"));
+
+    shuffle(tiles);
+    return tiles;
+}
+
+
+
+function makeTile(type, imgUrl) {
+    return {
+        "type": type,
+        "imgUrl" : imgUrl,
+        "left": "0px",
+        "top": "0px",
+        "zIndex": 0,
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "selected": false,
+        "hintTile": false,
+        "tileImgId": id++,
+        "tileOverlayId": id++
+    };
+}
+
+
+
+/**
+ * Creates a multi-dimensional array.
+ *
+ * Taken from http://stackoverflow.com/a/966938
+ */
+function createArray(length) {
+    var arr = new Array(length || 0),
+        i = length;
+
+    if (arguments.length > 1) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        while(i--) arr[length-1 - i] = createArray.apply(this, args);
+    }
+
+    return arr;
+}
+
+
+
+/**
+ * Taken from http://stackoverflow.com/a/2450976
+ */
+function shuffle(array) {
+    var currentIndex = array.length, temporaryValue, randomIndex;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+}
+
+
+
+/**
+ * This function returns a 3D array representing the board.
+ */
+function createBoard() {
+    // 3D array containing all the tiles
+    var tiles = createArray(MAX_X, MAX_Y, MAX_Z);
+    var tileset = createTileSet();
+
+    // Now let's place the tiles to create the turtle shape
+    // layer 0
+    tiles[3][1][0] = tileset.pop();
+    tiles[5][1][0] = tileset.pop();
+    tiles[7][1][0] = tileset.pop();
+    tiles[9][1][0] = tileset.pop();
+    tiles[11][1][0] = tileset.pop();
+    tiles[13][1][0] = tileset.pop();
+    tiles[15][1][0] = tileset.pop();
+    tiles[17][1][0] = tileset.pop();
+    tiles[19][1][0] = tileset.pop();
+    tiles[21][1][0] = tileset.pop();
+    tiles[23][1][0] = tileset.pop();
+    tiles[25][1][0] = tileset.pop();
+
+    tiles[7][3][0] = tileset.pop();
+    tiles[9][3][0] = tileset.pop();
+    tiles[11][3][0] = tileset.pop();
+    tiles[13][3][0] = tileset.pop();
+    tiles[15][3][0] = tileset.pop();
+    tiles[17][3][0] = tileset.pop();
+    tiles[19][3][0] = tileset.pop();
+    tiles[21][3][0] = tileset.pop();
+
+    tiles[5][5][0] = tileset.pop();
+    tiles[7][5][0] = tileset.pop();
+    tiles[9][5][0] = tileset.pop();
+    tiles[11][5][0] = tileset.pop();
+    tiles[13][5][0] = tileset.pop();
+    tiles[15][5][0] = tileset.pop();
+    tiles[17][5][0] = tileset.pop();
+    tiles[19][5][0] = tileset.pop();
+    tiles[21][5][0] = tileset.pop();
+    tiles[23][5][0] = tileset.pop();
+
+    tiles[3][7][0] = tileset.pop();
+    tiles[5][7][0] = tileset.pop();
+    tiles[7][7][0] = tileset.pop();
+    tiles[9][7][0] = tileset.pop();
+    tiles[11][7][0] = tileset.pop();
+    tiles[13][7][0] = tileset.pop();
+    tiles[15][7][0] = tileset.pop();
+    tiles[17][7][0] = tileset.pop();
+    tiles[19][7][0] = tileset.pop();
+    tiles[21][7][0] = tileset.pop();
+    tiles[23][7][0] = tileset.pop();
+    tiles[25][7][0] = tileset.pop();
+
+    tiles[3][9][0] = tileset.pop();
+    tiles[5][9][0] = tileset.pop();
+    tiles[7][9][0] = tileset.pop();
+    tiles[9][9][0] = tileset.pop();
+    tiles[11][9][0] = tileset.pop();
+    tiles[13][9][0] = tileset.pop();
+    tiles[15][9][0] = tileset.pop();
+    tiles[17][9][0] = tileset.pop();
+    tiles[19][9][0] = tileset.pop();
+    tiles[21][9][0] = tileset.pop();
+    tiles[23][9][0] = tileset.pop();
+    tiles[25][9][0] = tileset.pop();
+
+    tiles[1][8][0] = tileset.pop();
+    tiles[27][8][0] = tileset.pop();
+    tiles[29][8][0] = tileset.pop();
+
+    tiles[5][11][0] = tileset.pop();
+    tiles[7][11][0] = tileset.pop();
+    tiles[9][11][0] = tileset.pop();
+    tiles[11][11][0] = tileset.pop();
+    tiles[13][11][0] = tileset.pop();
+    tiles[15][11][0] = tileset.pop();
+    tiles[17][11][0] = tileset.pop();
+    tiles[19][11][0] = tileset.pop();
+    tiles[21][11][0] = tileset.pop();
+    tiles[23][11][0] = tileset.pop();
+
+    tiles[7][13][0] = tileset.pop();
+    tiles[9][13][0] = tileset.pop();
+    tiles[11][13][0] = tileset.pop();
+    tiles[13][13][0] = tileset.pop();
+    tiles[15][13][0] = tileset.pop();
+    tiles[17][13][0] = tileset.pop();
+    tiles[19][13][0] = tileset.pop();
+    tiles[21][13][0] = tileset.pop();
+
+    tiles[3][15][0] = tileset.pop();
+    tiles[5][15][0] = tileset.pop();
+    tiles[7][15][0] = tileset.pop();
+    tiles[9][15][0] = tileset.pop();
+    tiles[11][15][0] = tileset.pop();
+    tiles[13][15][0] = tileset.pop();
+    tiles[15][15][0] = tileset.pop();
+    tiles[17][15][0] = tileset.pop();
+    tiles[19][15][0] = tileset.pop();
+    tiles[21][15][0] = tileset.pop();
+    tiles[23][15][0] = tileset.pop();
+    tiles[25][15][0] = tileset.pop();
+
+    // layer 1
+    tiles[9][3][1] = tileset.pop();
+    tiles[11][3][1] = tileset.pop();
+    tiles[13][3][1] = tileset.pop();
+    tiles[15][3][1] = tileset.pop();
+    tiles[17][3][1] = tileset.pop();
+    tiles[19][3][1] = tileset.pop();
+
+    tiles[9][5][1] = tileset.pop();
+    tiles[11][5][1] = tileset.pop();
+    tiles[13][5][1] = tileset.pop();
+    tiles[15][5][1] = tileset.pop();
+    tiles[17][5][1] = tileset.pop();
+    tiles[19][5][1] = tileset.pop();
+
+    tiles[9][7][1] = tileset.pop();
+    tiles[11][7][1] = tileset.pop();
+    tiles[13][7][1] = tileset.pop();
+    tiles[15][7][1] = tileset.pop();
+    tiles[17][7][1] = tileset.pop();
+    tiles[19][7][1] = tileset.pop();
+
+    tiles[9][9][1] = tileset.pop();
+    tiles[11][9][1] = tileset.pop();
+    tiles[13][9][1] = tileset.pop();
+    tiles[15][9][1] = tileset.pop();
+    tiles[17][9][1] = tileset.pop();
+    tiles[19][9][1] = tileset.pop();
+
+    tiles[9][11][1] = tileset.pop();
+    tiles[11][11][1] = tileset.pop();
+    tiles[13][11][1] = tileset.pop();
+    tiles[15][11][1] = tileset.pop();
+    tiles[17][11][1] = tileset.pop();
+    tiles[19][11][1] = tileset.pop();
+
+    tiles[9][13][1] = tileset.pop();
+    tiles[11][13][1] = tileset.pop();
+    tiles[13][13][1] = tileset.pop();
+    tiles[15][13][1] = tileset.pop();
+    tiles[17][13][1] = tileset.pop();
+    tiles[19][13][1] = tileset.pop();
+
+    // layer 2
+    tiles[11][5][2] = tileset.pop();
+    tiles[13][5][2] = tileset.pop();
+    tiles[15][5][2] = tileset.pop();
+    tiles[17][5][2] = tileset.pop();
+
+    tiles[11][7][2] = tileset.pop();
+    tiles[13][7][2] = tileset.pop();
+    tiles[15][7][2] = tileset.pop();
+    tiles[17][7][2] = tileset.pop();
+
+    tiles[11][9][2] = tileset.pop();
+    tiles[13][9][2] = tileset.pop();
+    tiles[15][9][2] = tileset.pop();
+    tiles[17][9][2] = tileset.pop();
+
+    tiles[11][11][2] = tileset.pop();
+    tiles[13][11][2] = tileset.pop();
+    tiles[15][11][2] = tileset.pop();
+    tiles[17][11][2] = tileset.pop();
+
+    // layer 3
+    tiles[13][7][3] = tileset.pop();
+    tiles[15][7][3] = tileset.pop();
+
+    tiles[13][9][3] = tileset.pop();
+    tiles[15][9][3] = tileset.pop();
+
+    // layer 4
+    tiles[14][8][4] = tileset.pop();
+
+    createTileDivs(tiles);
+    return tiles;
+}
+
+
+
+function createTileDivs(tiles) {
+    var mainDiv = document.getElementById('main');
+    for (var x = 0; x < MAX_X; x++) {
+        for (var y = 0; y < MAX_Y; y++) {
+            for (var z = 0; z < MAX_Z; z++) {
+                if (tiles[x][y][z] != null) {
+                    tiles[x][y][z].x = x;
+                    tiles[x][y][z].y = y;
+                    tiles[x][y][z].z = z;
+                    var img = document.createElement("img");
+                    mainDiv.appendChild(img);
+                    img.id = tiles[x][y][z].tileImgId;
+                    img.style.position = "absolute";
+                    img.style.left = ((x * TILE_WIDTH / 2) - z * TILE_BORDER_WIDTH) + "px";
+                    img.style.top = ((y * TILE_HEIGHT / 2) - z * TILE_BORDER_HEIGHT) + "px";
+                    img.setAttribute("src", tiles[x][y][z].imgUrl);
+                    img.ondragstart = function(e) {
+                        e.preventDefault();
+                    };
+
+                    // Since each tile image includes the right and bottom border, when a tile A is on the left of a tile B,
+                    // B must have a higher z-index to be displayed on top of A's right border. The same applies when B
+                    // is placed vertically under A, as well as when B is on layer above A's layer. The following
+                    // calculation ensures that z-indexes obey to these rules
+                    img.style.zIndex = y + x * MAX_Y  + (z * 2) * (MAX_X * MAX_Y);
+
+                    imgOverlay = document.createElement("div");
+                    mainDiv.appendChild(imgOverlay);
+                    imgOverlay.id = tiles[x][y][z].tileOverlayId;
+                    imgOverlay.setAttribute("class", "overlay");
+                    imgOverlay.style.position = "absolute";
+                    imgOverlay.style.left = img.style.left;
+                    imgOverlay.style.top = img.style.top;
+                    imgOverlay.style.width = (TILE_WIDTH - TILE_BORDER_WIDTH)  + "px";
+                    imgOverlay.style.height = (TILE_HEIGHT - TILE_BORDER_HEIGHT) + "px";
+                    imgOverlay.style.zIndex = y + x * MAX_Y  + (z * 2 + 1) * (MAX_X * MAX_Y);
+
+                    img.onclick = tileClicked(img, imgOverlay, tiles[x][y][z]);
+                }
+            }
+        }
+    }
+}
+
+
+
+function areCompatibleTiles(tile1, tile2) {
+    return tile1.type == tile2.type;
+}
+
+
+
+function removeElementById(id) {
+    var element = document.getElementById(id);
+    if (element != null)
+        element.parentNode.removeChild(element);
+}
+
+
+
+function removeTile(tile) {
+    removeElementById(tile.tileImgId);
+    removeElementById(tile.tileOverlayId);
+    tiles[tile.x][tile.y][tile.z] = null;
+}
+
+
+
+function hideHintTiles() {
+    if (hintTile1 != null) {
+        var overlay1 = document.getElementById(hintTile1.tileOverlayId);
+        if (overlay1 != null) {
+            overlay1.style.border = "";
+        }
+    }
+    if (hintTile2 != null) {
+        var overlay2 = document.getElementById(hintTile2.tileOverlayId);
+        if (overlay2 != null) {
+            overlay2.style.border = "";
+        }
+    }
+}
+
+
+
+function showHintTiles() {
+    if (hintTile1 != null && hintTile2 != null) {
+        var overlay1 = document.getElementById(hintTile1.tileOverlayId);
+        if (overlay1 != null) {
+            overlay1.style.border = "thick solid blue";
+        }
+
+        var overlay2 = document.getElementById(hintTile2.tileOverlayId);
+        if (overlay2 != null) {
+            overlay2.style.border = "thick solid blue";
+        }
+        document.getElementById("hintButton").disabled = true;
+    }
+}
+
+
+
+/**
+ * Given some parameters, let's return an anonymous function that uses them.
+ */
+function tileClicked(img, imgOverlay, tile) {
+    return function() {
+        hideHintTiles();
+
+        if (!isSelectable(tile))
+            return;
+
+        if (selectedTile == null) {
+            // no selected tile: let's select this one
+            imgOverlay.style.border = "thick solid red";
+            selectedTile = tile;
+        } else if (selectedTile == tile) {
+            // let's unselect the current tile
+            imgOverlay.style.border = "";
+            selectedTile = null;
+        } else if (areCompatibleTiles(selectedTile, tile)) {
+            removeTile(selectedTile);
+            removeTile(tile);
+            selectedTile = null;
+
+            // Let's postpone the state check for 1ms so that the browser can re-render first the
+            // board without the tiles we just removed
+            setTimeout(function() {
+                var state = checkGameState();
+                if (state == VICTORY) {
+                    alert("Victory !");
+                } else if (state == GAME_OVER) {
+                    alert("Game over !");
+                } else if (state == GAME_BLOCKED) {
+                    alert("No more move possible. The tiles will be shuffled.");
+                    do {
+                        shuffleGame();
+                    } while (GAME_BLOCKED == checkGameState());
+                }
+            }, 1);
+        }
+    }
+}
+
+
+
+function shuffleGame() {
+    var remainingTiles = [];
+    for (var x = 0; x < MAX_X; x++) {
+        for (var y = 0; y < MAX_Y; y++) {
+            for (var z = 0; z < MAX_Z; z++) {
+                if (tiles[x][y][z] != null) {
+                    remainingTiles.push(tiles[x][y][z]);
+                }
+            }
+        }
+    }
+    shuffle(remainingTiles);
+    while (remainingTiles.length != 0) {
+        // Let's pick 2 tiles and swap them
+        var a = remainingTiles.pop();
+        var b = remainingTiles.pop();
+        var tmpType = a.type;
+        a.type = b.type;
+        b.type = tmpType;
+        var tmpImgUrl = a.imgUrl;
+        a.imgUrl = b.imgUrl;
+        b.imgUrl = tmpImgUrl;
+        document.getElementById(a.tileImgId).setAttribute("src", a.imgUrl);
+        document.getElementById(b.tileImgId).setAttribute("src", b.imgUrl);
+    }
+}
+
+
+
+function getTile(x, y, z) {
+    return tiles[x][y][z];
+}
+
+
+
+
+/**
+ * Checks the game state and returns VICTORY, GAME_OVER, GAME_BLOCKED or PLAYING.
+ * If the state is PLAYING, puts 2 matching selectable tiles in
+ * the global variables hintTile1 and hintTile2.
+ */
+function checkGameState() {
+    hintTile1 = null;
+    hintTile2 = null;
+    var selectableTiles = [];
+    var remainingTiles = 0;
+    for (var x = 0; x < MAX_X; x++) {
+        for (var y = 0; y < MAX_Y; y++) {
+            for (var z = 0; z < MAX_Z; z++) {
+                if (tiles[x][y][z] != null) {
+                    remainingTiles++;
+                    if (isSelectable(tiles[x][y][z])) {
+                        selectableTiles.push(tiles[x][y][z]);
+                    }
+                }
+            }
+        }
+    }
+
+    if (remainingTiles == 0)
+        return VICTORY;
+
+    if (selectableTiles.length == 1)
+        return GAME_OVER;
+
+    selectableTiles.sort(function(a, b) {
+        return a.type - b.type;
+    });
+
+    for (var i = 0 ; i < selectableTiles.length - 1 ; i++) {
+        if (selectableTiles[i].type == selectableTiles[i + 1].type) {
+            hintTile1 = selectableTiles[i];
+            hintTile2 = selectableTiles[i + 1];
+            document.getElementById("hintButton").disabled = false;
+            return PLAYING;
+        }
+    }
+
+    // No selectable pair of tile
+    return GAME_BLOCKED;
+}
+
+
+
+function isSelectable(tile) {
+    var x = tile.x;
+    var y = tile.y;
+    var z = tile.z;
+
+    var leftOk = (x <= 1 || (getTile(x - 2, y, z) == null && (y == 0 || getTile(x - 2, y - 1, z) == null) && (y == MAX_Y - 1 || getTile(x - 2, y + 1, z) == null)));
+    var rightOk = (x >= (MAX_X - 2) || (getTile(x + 2, y, z) == null && (y == 0 || getTile(x + 2, y - 1, z) == null) && (y == MAX_Y - 1 || getTile(x + 2, y + 1, z) == null)));
+    var aboveOk = (z == MAX_Z - 1 || ((x == 0 || y == 0 || getTile(x - 1, y - 1, z + 1) == null) && (y == 0 || getTile(x, y - 1, z + 1) == null) && (x == MAX_X - 1 || y == 0 || getTile(x + 1, y - 1, z + 1) == null) && (x == 0 || getTile(x - 1, y, z + 1) == null) && getTile(x, y, z + 1) == null && (x == MAX_X - 1 || getTile(x + 1, y, z + 1) == null) && (x == 0 || y == MAX_Y - 1 || getTile(x - 1, y + 1, z + 1) == null) && (y == MAX_Y - 1 || getTile(x, y + 1, z + 1) == null) && (x == MAX_X - 1 || y == MAX_Y - 1 || getTile(x + 1, y + 1, z + 1) == null)));
+    return (leftOk || rightOk) && aboveOk;
+}
+
+
+
+function startGame() {
+    tiles = createBoard();
+
+    // Let's make sure we don't start with a situation with no possible move
+    while (GAME_BLOCKED == checkGameState()) {
+        shuffleGame();
+    }
+}
+
+</script>
+
+<body onload='startGame()'>
+<div id='main' />
+<button id='hintButton' onclick='showHintTiles()'>Show hint</button>
+
+</body>
+</html>
