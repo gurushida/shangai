@@ -622,8 +622,12 @@ function tileClicked(img, imgOverlay, tile) {
                 var state = checkGameState();
                 if (state == VICTORY) {
                     alert("Victory !");
+                    startGame();
+                    return;
                 } else if (state == GAME_OVER) {
                     alert("Game over !");
+                    startGame();
+                    return;
                 } else if (state == GAME_BLOCKED) {
                     alert("No more move possible. The tiles will be shuffled.");
                     do {
